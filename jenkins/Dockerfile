@@ -8,7 +8,8 @@ RUN echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
     https://pkg.jenkins.io/debian-stable binary/ | tee \
     /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-RUN apt-get update && apt-get install -y jenkins
+RUN apt-get update && apt-get install -y jenkins && \
+    ls /usr/share/jenkins
 
 # Exponer el puerto 8080 para Jenkins
 EXPOSE 8080
