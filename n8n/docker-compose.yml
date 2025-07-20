@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8n.devtest.wiki
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.devtest.wiki
+      - WEBHOOK_TUNNEL_URL=https://n8n.devtest.wiki
+      - VUE_APP_URL_BASE_API=https://n8n.devtest.wiki
+      - N8N_ENABLE_LOCAL_FILE_ACCESS=true
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - /home/valian:/mnt/valian
+      - /home/valian/.ssh:/home/node/.ssh
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+volumes:
+  n8n_data:
