@@ -1,0 +1,26 @@
+# ──────────────────────────────────────────────────────────────
+# dockerfiles — catálogo de herramientas dockerizadas (dev/POC)
+# Los datos de las DBs viven en VOLÚMENES NOMBRADOS de Docker,
+# no en el repo. Nunca commitear directorios de datos.
+# ──────────────────────────────────────────────────────────────
+
+# Datos persistidos en bind-mounts (legacy / accidentales)
+**/postgres-data/
+**/pgdata/
+**/mysql-data/
+**/mongodb-data/
+**/valkey-data/
+**/redis-data/
+**/rabbitmq-data/
+**/data/
+
+# Secrets reales (los .env de este repo son creds dummy de dev y SÍ se commitean)
+*.env.local
+*.secret
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

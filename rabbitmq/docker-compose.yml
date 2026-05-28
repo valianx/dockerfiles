@@ -1,17 +1,36 @@
+# RabbitMQ 4.3 + plugin de management — broker AMQP para desarrollo local / POC.
+#
+# Levantar:   docker compose up -d
+# UI web:     http://localhost:15672   (user: admin / pass: 1234)
+# AMQP:       amqp://admin:1234@localhost:5672
+
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.3-management
     container_name: rabbitmq
+    restart: unless-stopped
+    # hostname FIJO: el nombre del nodo de RabbitMQ se deriva del hostname.
+    # Sin esto, recrear el contenedor genera un nodo nuevo y "pierde" los
+    # datos del volumen. Con hostname estable, la data persiste de verdad.
+    hostname: rabbitmq
     ports:
-      - "5672:5672"     # Puerto para las apps (AMQP)
-      - "15672:15672"   # Puerto para el panel web (UI)
+      - "5672:5672"     # AMQP (apps)
+      - "15672:15672"   # panel web de management
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: 1234
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-1234}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   rabbitmq_data:
-
