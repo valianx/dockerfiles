@@ -1,0 +1,32 @@
+# Valkey 9.1 — reemplazo open-source de Redis (cache / key-value / pub-sub).
+# Para desarrollo local / POC. Sin auth (uso local).
+#
+# Levantar:  docker compose up -d
+# CLI:       docker compose exec valkey valkey-cli
+# Conectar:  redis://localhost:6379   (clientes de Redis funcionan tal cual)
+
+services:
+  valkey:
+    image: valkey/valkey:9.1.0
+    container_name: valkey
+    restart: unless-stopped
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    # Persistencia activada para dev: RDB (snapshot cada 60s si hubo >=1 cambio)
+    # + AOF (append-only log). Así no perdés los datos al reiniciar.
+    command: ["valkey-server", "--save", "60", "1", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  valkey_data:

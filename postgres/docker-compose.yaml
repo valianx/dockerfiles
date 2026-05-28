@@ -1,21 +1,59 @@
+# PostgreSQL 18 + pgvector — para desarrollo local / POC
+# La imagen oficial pgvector/pgvector:pg18 = Postgres 18.4 con la
+# extensión pgvector 0.8.x ya compilada. Las extensiones se activan
+# solas en el primer arranque vía ./initdb/*.sql.
+#
+# Levantar:   docker compose up -d
+# Conectar:   postgresql://postgres:postgres@localhost:5432/app
+# psql:       docker compose exec postgres psql -U postgres -d app
+
 services:
   postgres:
-    image: postgres:17.5
-    restart: always
+    image: pgvector/pgvector:pg18
+    container_name: postgres
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      # Locale/encoding del cluster (solo aplica en el primer init)
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Volumen NOMBRADO (no bind-mount): evita líos de permisos en
+      # Windows y mantiene el repo limpio. Los datos persisten entre
+      # `up`/`down`; se borran con `docker compose down -v`.
+      #
+      # OJO: en PostgreSQL 18+ las imágenes oficiales cambiaron el layout.
+      # Se monta en /var/lib/postgresql (NO en .../data); los datos quedan
+      # en un subdir versionado (/var/lib/postgresql/18/docker), lo que
+      # habilita `pg_upgrade --link` a futuro. Montar en .../data rompe.
+      - postgres_data:/var/lib/postgresql
+      # Scripts de inicialización (corren una sola vez, en DB vacía)
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    # Tuning liviano para una máquina de dev (ayuda a construir índices
+    # vectoriales HNSW/IVFFlat). Ajustá a gusto.
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "max_connections=100"
+    # /dev/shm chico por defecto en Docker rompe queries paralelas
+    shm_size: "256mb"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     logging:
       options:
-        max-size: 10m
+        max-size: "10m"
         max-file: "3"
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    networks:
-      - app-network
 
-networks:
-  app-network:
-    external: true
+volumes:
+  postgres_data:
